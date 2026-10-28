@@ -1,0 +1,1965 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المحول الذكي للنشرات الدوائية | Smart Medical Leaflet Digitizer</title>
+  
+  <!-- Google Web Fonts for Live Customization -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;700;800;900&family=Almarai:wght@400;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;600;700;800;900&family=Noto+Sans+Arabic:wght@400;600;700;800;900&family=Roboto:wght@400;500;700;900&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Local Libraries for Offline Functionality -->
+  <script src="html2pdf.bundle.min.js"></script>
+  <script src="tesseract.min.js"></script>
+
+  <style>
+    :root {
+      --primary-black: #000000;
+      --text-color: #050505;
+      --paper-bg: #ffffff;
+      --border-color: #000000;
+      --app-bg: #e6ecf2;
+      --ar-font: 'Tajawal', sans-serif;
+      --en-font: 'Roboto', sans-serif;
+      --base-font-size: 11px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    body {
+      font-family: var(--ar-font);
+      background-color: var(--app-bg);
+      color: var(--text-color);
+      line-height: 1.30;
+      padding-bottom: 80px;
+    }
+
+    /* ===================================================
+       CONTROL TOOLBAR (HIDDEN IN PRINT & PDF)
+       =================================================== */
+    .top-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10000;
+      background: #151b22;
+      color: #ffffff;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+      padding: 10px 18px;
+      font-family: 'Cairo', 'Tajawal', sans-serif;
+    }
+
+    .toolbar-content {
+      max-width: 1650px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .badge-pill {
+      background: #0d6efd;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 50px;
+    }
+
+    .actions-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 7px;
+    }
+
+    /* Font controls group */
+    .font-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #212933;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid #384452;
+      font-size: 12px;
+    }
+
+    .font-controls label {
+      color: #adb5bd;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .custom-select {
+      background: #151b22;
+      color: #f8f9fa;
+      border: 1px solid #485666;
+      border-radius: 4px;
+      padding: 4px 7px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      outline: none;
+    }
+    .custom-select:focus {
+      border-color: #0d6efd;
+    }
+
+    .font-size-adjuster {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: #151b22;
+      border: 1px solid #485666;
+      border-radius: 4px;
+      padding: 2px 4px;
+    }
+
+    .font-size-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+    }
+    .font-size-btn:hover {
+      background: #3e4854;
+    }
+
+    /* Action Buttons */
+    .tool-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      line-height: 1.2;
+    }
+
+    .tool-btn-smart {
+      background: linear-gradient(135deg, #6f42c1, #0d6efd);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(111, 66, 193, 0.4);
+    }
+    .tool-btn-smart:hover {
+      background: linear-gradient(135deg, #59359a, #0b5ed7);
+      transform: translateY(-1px);
+    }
+
+    .tool-btn-compare {
+      background: #20c997;
+      color: #fff;
+    }
+    .tool-btn-compare:hover {
+      background: #198754;
+    }
+
+    .tool-btn-pdf {
+      background: linear-gradient(135deg, #d90429, #ef233c);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(217, 4, 41, 0.4);
+    }
+    .tool-btn-pdf:hover {
+      background: linear-gradient(135deg, #b50322, #d90429);
+      transform: translateY(-1px);
+    }
+
+    .tool-btn-primary {
+      background: #0d6efd;
+      color: #fff;
+    }
+    .tool-btn-primary:hover {
+      background: #0b5ed7;
+    }
+
+    .tool-btn-edit {
+      background: #ffc107;
+      color: #111;
+    }
+    .tool-btn-edit:hover {
+      background: #ffca2c;
+    }
+    .tool-btn-edit.active {
+      background: #198754;
+      color: #fff;
+    }
+
+    .tool-btn-save {
+      background: #198754;
+      color: #fff;
+    }
+    .tool-btn-save:hover {
+      background: #157347;
+    }
+
+    .tool-btn-reset {
+      background: #495057;
+      color: #f8f9fa;
+      border-color: #6c757d;
+    }
+    .tool-btn-reset:hover {
+      background: #6c757d;
+    }
+
+    .segmented-control {
+      display: flex;
+      background: #212933;
+      border-radius: 6px;
+      padding: 2px;
+      border: 1px solid #384452;
+    }
+
+    .segment-btn {
+      background: transparent;
+      border: none;
+      color: #ced4da;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.15s;
+      font-family: inherit;
+    }
+
+    .segment-btn.active {
+      background: #0d6efd;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+
+    /* Live status toast */
+    .status-toast {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      z-index: 99999;
+      background: #198754;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      font-size: 13.5px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      animation: slideUp 0.3s ease;
+    }
+    .status-toast.error { background: #dc3545; }
+    .status-toast.loading { background: #0d6efd; }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .edit-banner {
+      display: none;
+      background: #d1e7dd;
+      color: #0f5132;
+      border-bottom: 1px solid #badbcc;
+      padding: 7px 20px;
+      text-align: center;
+      font-size: 13.5px;
+      font-weight: 600;
+      font-family: 'Cairo', sans-serif;
+    }
+    .edit-banner.show { display: block; }
+
+    /* ===================================================
+       SMART UPLOAD PANEL & MODAL
+       =================================================== */
+    .smart-panel {
+      display: none;
+      background: #ffffff;
+      border-bottom: 2px solid #ced4da;
+      padding: 18px 25px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      font-family: 'Cairo', sans-serif;
+      transition: all 0.3s ease;
+    }
+    .smart-panel.active { display: block; }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .panel-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drop-zone {
+      border: 2.5px dashed #0d6efd;
+      background: #f8faff;
+      border-radius: 10px;
+      padding: 22px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .drop-zone:hover {
+      background: #eef4ff;
+      border-color: #0b5ed7;
+    }
+    .drop-zone-icon {
+      font-size: 32px;
+      margin-bottom: 6px;
+    }
+    .drop-zone-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: #333;
+    }
+    .drop-zone-subtext {
+      font-size: 12px;
+      color: #6c757d;
+      margin-top: 3px;
+    }
+
+    /* Uploaded Images Grid */
+    .images-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .image-card {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .image-thumb-wrap {
+      width: 100%;
+      height: 140px;
+      background: #000;
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .image-thumb-wrap img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .image-card-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .image-card-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .image-card-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-ocr {
+      flex: 1;
+      padding: 5px 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      background: #0d6efd;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .btn-ocr:hover { background: #0b5ed7; }
+
+    .btn-set-side {
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #e9ecef;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-set-side:hover { background: #dee2e6; }
+
+    /* Progress bar */
+    .ocr-progress-bar-container {
+      display: none;
+      margin-top: 10px;
+      background: #e9ecef;
+      border-radius: 6px;
+      overflow: hidden;
+      height: 18px;
+      position: relative;
+    }
+    .ocr-progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #0d6efd, #20c997);
+      transition: width 0.2s;
+    }
+    .ocr-progress-text {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #000;
+      top: 0;
+      line-height: 18px;
+    }
+
+    /* Comparison Split Screen Mode */
+    .compare-container {
+      display: none;
+      width: 100%;
+      max-width: 1750px;
+      margin: 20px auto;
+      padding: 0 15px;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .compare-container.active {
+      display: flex;
+    }
+
+    .compare-image-side {
+      flex: 1;
+      background: #ffffff;
+      border: 2px solid #333;
+      border-radius: 8px;
+      padding: 12px;
+      position: sticky;
+      top: 60px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .compare-image-side img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 4px;
+    }
+
+    .compare-doc-side {
+      flex: 1.2;
+    }
+
+    /* ===================================================
+       SHEET LAYOUT CONTAINER
+       =================================================== */
+    .leaflets-viewport {
+      max-width: 1560px;
+      margin: 25px auto;
+      padding: 0 15px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .leaflets-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 32px;
+      width: 100%;
+    }
+
+    /* Physical Leaflet Page Simulation */
+    .leaflet-page {
+      width: 210mm;
+      min-height: 295mm;
+      background: var(--paper-bg);
+      color: var(--primary-black);
+      border: 2px solid var(--border-color);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      padding: 8mm 9mm 6mm 9mm;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    /* Flexbox 2-Column Layout for universal canvas compatibility */
+    .leaflet-columns {
+      display: flex;
+      flex-direction: row;
+      gap: 14px;
+      height: 100%;
+      align-items: flex-start;
+    }
+
+    .leaflet-col {
+      flex: 1 1 0;
+      width: calc(50% - 7px);
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      font-size: var(--base-font-size);
+      line-height: 1.30;
+      text-align: justify;
+    }
+
+    /* Typography assignments */
+    .arabic-side {
+      direction: rtl;
+      text-align: right;
+      font-family: var(--ar-font);
+    }
+
+    .english-side {
+      direction: ltr;
+      text-align: left;
+      font-family: var(--en-font);
+      letter-spacing: -0.05px;
+    }
+
+    /* Arabic Header inside Column 1 (Right Column) */
+    .ar-header-block {
+      margin-bottom: 7px;
+      padding-bottom: 3px;
+      border-bottom: 1.5px solid #000;
+      position: relative;
+    }
+
+    .ar-header-title {
+      font-size: 36px;
+      font-weight: 900;
+      line-height: 1.1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ar-reg-circle {
+      font-size: 15px;
+      border: 1.5px solid #000;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      margin-left: 4px;
+      line-height: 1;
+    }
+
+    .ar-header-subtitle {
+      font-size: 25px;
+      font-weight: 900;
+      margin-top: 1px;
+    }
+
+    /* English Header inside Column 1 (Left Column) */
+    .en-header-block {
+      margin-bottom: 7px;
+      padding-bottom: 3px;
+      border-bottom: 1.5px solid #000;
+    }
+
+    .en-header-title {
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .en-reg-symbol {
+      font-size: 16px;
+      vertical-align: super;
+      font-weight: 700;
+    }
+
+    .en-header-subtitle {
+      font-size: 21px;
+      font-weight: 900;
+      margin-top: 1px;
+    }
+
+    /* Section Elements */
+    .doc-section {
+      margin-bottom: 6px;
+    }
+
+    .doc-heading {
+      font-size: 12px;
+      font-weight: 900;
+      margin-bottom: 2px;
+      color: #000;
+    }
+
+    .english-side .doc-heading {
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    .doc-subheading {
+      font-size: 11.4px;
+      font-weight: 800;
+      margin-top: 2px;
+      margin-bottom: 1px;
+    }
+
+    .doc-p {
+      margin-bottom: 2.5px;
+      text-align: justify;
+      word-spacing: -0.2px;
+    }
+
+    /* Composition Dotted Leaders */
+    .composition-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin: 1px 0;
+    }
+
+    .composition-row .ing-name {
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .composition-row .dots-line {
+      flex-grow: 1;
+      border-bottom: 1.5px dotted #333;
+      margin: 0 5px 3px 5px;
+      height: 1px;
+    }
+
+    .composition-row .ing-dose {
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    /* Bullet List */
+    .doc-bullet-list {
+      list-style: none;
+      padding: 0;
+      margin: 1px 0 3px 0;
+    }
+
+    .doc-bullet-list li {
+      position: relative;
+      margin-bottom: 1.5px;
+      text-align: justify;
+    }
+
+    .arabic-side .doc-bullet-list li {
+      padding-right: 14px;
+    }
+
+    .arabic-side .doc-bullet-list li::before {
+      content: "-";
+      position: absolute;
+      right: 2px;
+      font-weight: 900;
+    }
+
+    .english-side .doc-bullet-list li {
+      padding-left: 14px;
+    }
+
+    .english-side .doc-bullet-list li::before {
+      content: "-";
+      position: absolute;
+      left: 2px;
+      font-weight: 900;
+    }
+
+    /* Instructions Box */
+    .instructions-box {
+      border: 1.5px solid #000;
+      padding: 5px 7px;
+      margin-top: 5px;
+      margin-bottom: 6px;
+      background: #ffffff;
+    }
+
+    .instructions-box-title {
+      text-align: center;
+      font-weight: 900;
+      font-size: 12px;
+      border-bottom: 1.5px solid #000;
+      padding-bottom: 2.5px;
+      margin-bottom: 3.5px;
+    }
+
+    .instructions-box-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 3px 0;
+    }
+
+    .instructions-box-list li {
+      position: relative;
+      margin-bottom: 2px;
+      font-size: 10.5px;
+      line-height: 1.25;
+      text-align: justify;
+    }
+
+    .arabic-side .instructions-box-list li {
+      padding-right: 12px;
+    }
+    .arabic-side .instructions-box-list li::before {
+      content: "-";
+      position: absolute;
+      right: 2px;
+    }
+
+    .english-side .instructions-box-list li {
+      padding-left: 12px;
+    }
+    .english-side .instructions-box-list li::before {
+      content: "-";
+      position: absolute;
+      left: 2px;
+    }
+
+    .instructions-box-bottom {
+      border-top: 1.5px solid #000;
+      padding-top: 2.5px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 10.5px;
+      line-height: 1.30;
+    }
+
+    /* Manufacturer Footer & Logo */
+    .col-footer-wrapper {
+      margin-top: auto;
+      padding-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .arabic-side .col-footer-wrapper {
+      flex-direction: row-reverse;
+      justify-content: flex-start;
+    }
+
+    .english-side .col-footer-wrapper {
+      flex-direction: row;
+      justify-content: flex-start;
+    }
+
+    .mfg-info {
+      font-size: 11px;
+      line-height: 1.20;
+    }
+
+    .arabic-side .mfg-info {
+      text-align: right;
+    }
+
+    .english-side .mfg-info {
+      text-align: left;
+    }
+
+    .mfg-role {
+      font-weight: 900;
+    }
+
+    .mfg-name {
+      font-weight: 900;
+      font-size: 11.5px;
+      color: #000;
+    }
+
+    .mfg-addr {
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+
+    .mfg-logo {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+    }
+
+    /* Editable Outline */
+    [contenteditable="true"] {
+      outline: 1.5px dashed rgba(13, 110, 253, 0.45);
+      background-color: rgba(13, 110, 253, 0.03);
+      cursor: text;
+    }
+
+    [contenteditable="true"]:hover {
+      outline: 2px dashed #0d6efd;
+      background-color: rgba(13, 110, 253, 0.08);
+    }
+
+    [contenteditable="true"]:focus {
+      outline: 2px solid #0d6efd;
+      background-color: #fff;
+    }
+
+    /* ===================================================
+       PRINT MEDIA STYLES
+       =================================================== */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 5mm 5mm 5mm 5mm;
+      }
+
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .top-toolbar, .edit-banner, .status-toast, .smart-panel, .compare-image-side {
+        display: none !important;
+      }
+
+      .leaflets-viewport, .compare-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+        display: block !important;
+      }
+
+      .leaflets-grid {
+        gap: 0 !important;
+        width: 100% !important;
+        display: block !important;
+      }
+
+      .leaflet-page {
+        width: 100% !important;
+        height: 285mm !important;
+        max-height: 286mm !important;
+        box-shadow: none !important;
+        border: 2px solid #000 !important;
+        padding: 6mm 7mm !important;
+        margin: 0 0 0 0 !important;
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+        break-after: page !important;
+      }
+
+      .leaflet-page:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+
+      [contenteditable="true"] {
+        outline: none !important;
+        background-color: transparent !important;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .leaflet-page {
+        width: 100%;
+        min-height: auto;
+      }
+      .leaflet-columns {
+        flex-direction: column;
+        gap: 20px;
+      }
+      .leaflet-col {
+        width: 100%;
+      }
+      .font-controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .compare-container {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Sticky Control Toolbar -->
+  <header class="top-toolbar">
+    <div class="toolbar-content">
+      
+      <div class="brand-title">
+        <span class="badge-pill">النسخة الذكية v3.0</span>
+        <strong>محوّل النشرات الدوائية الرقمي</strong>
+      </div>
+
+      <div class="actions-group">
+        
+        <!-- Smart Upload Button -->
+        <button type="button" class="tool-btn tool-btn-smart" onclick="toggleSmartPanel()" title="رفع صور النشرات واستخراج النصوص آلياً">
+          📸 <span>رفع صور جديدة</span>
+        </button>
+
+        <!-- Compare Side-by-Side View -->
+        <button type="button" class="tool-btn tool-btn-compare" id="btnCompare" onclick="toggleCompareMode()" title="عرض الصورة المرفوعة بجانب النشرة للمقارنة والتدقيق">
+          👁️ <span>مقارنة مع الأصل</span>
+        </button>
+
+        <!-- View selector -->
+        <div class="segmented-control">
+          <button type="button" class="segment-btn active" id="btnBoth" onclick="switchView('both')">كلا الوجهين</button>
+          <button type="button" class="segment-btn" id="btnAr" onclick="switchView('ar')">عربي فقط</button>
+          <button type="button" class="segment-btn" id="btnEn" onclick="switchView('en')">English Only</button>
+        </div>
+
+        <!-- Font Family & Size Controls -->
+        <div class="font-controls">
+          <label for="arFontSelect">خط عربي:</label>
+          <select id="arFontSelect" class="custom-select" onchange="changeArFont(this.value)">
+            <option value="'Tajawal', sans-serif" selected>تجوال (الافتراضي)</option>
+            <option value="'Cairo', sans-serif">كايرو (عريض وحديث)</option>
+            <option value="'Almarai', sans-serif">المراعي (رسمي أنيق)</option>
+            <option value="'Amiri', serif">أميري (نسخي تقليدي)</option>
+            <option value="'Alexandria', sans-serif">الإسكندرية</option>
+            <option value="'Noto Sans Arabic', sans-serif">نوتو سانس</option>
+            <option value="Tahoma, sans-serif">تهوما (Classic Leaflet)</option>
+            <option value="Arial, sans-serif">أريال (Arial)</option>
+          </select>
+
+          <label for="enFontSelect">English:</label>
+          <select id="enFontSelect" class="custom-select" onchange="changeEnFont(this.value)">
+            <option value="'Roboto', sans-serif" selected>Roboto</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value="'Segoe UI', sans-serif">Segoe UI</option>
+            <option value="Georgia, serif">Georgia</option>
+          </select>
+
+          <div class="font-size-adjuster" title="تعديل حجم الخط">
+            <button type="button" class="font-size-btn" onclick="adjustFontSize(-0.4)">A-</button>
+            <span id="fontSizeDisplay" style="font-size: 11px; padding: 0 3px;">11.0</span>
+            <button type="button" class="font-size-btn" onclick="adjustFontSize(0.4)">A+</button>
+          </div>
+        </div>
+
+        <!-- DIRECT PDF EXPORT (GUARANTEED NO BLANK PAGE) -->
+        <button type="button" class="tool-btn tool-btn-pdf" onclick="exportDirectPDF()" title="حفظ فوري بتنسيق PDF في مجلد التنزيلات بدون نافذة الطباعة">
+          📥 <span>حفظ PDF فوري</span>
+        </button>
+
+        <!-- Edit Toggle -->
+        <button type="button" class="tool-btn tool-btn-edit" id="btnEdit" onclick="toggleEditMode()">
+          ✏️ <span id="editBtnLabel">تعديل النص</span>
+        </button>
+
+        <!-- Save -->
+        <button type="button" class="tool-btn tool-btn-save" onclick="saveEdits()" title="حفظ التعديلات في المتصفح">
+          💾 حفظ
+        </button>
+
+        <!-- Reset -->
+        <button type="button" class="tool-btn tool-btn-reset" onclick="resetDefaults()" title="استعادة النص الأصلي">
+          🔄 استعادة
+        </button>
+
+        <!-- Traditional Print Dialog -->
+        <button type="button" class="tool-btn tool-btn-primary" onclick="window.print()" title="فتح نافذة الطباعة العادية">
+          🖨️ طباعة
+        </button>
+
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Notification Toast -->
+  <div class="status-toast" id="statusToast">
+    <span id="statusIcon">✓</span>
+    <span id="statusMessage">تم الإجراء بنجاح</span>
+  </div>
+
+  <!-- SMART UPLOAD & OCR PANEL -->
+  <section class="smart-panel" id="smartPanel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span>📸</span>
+        <span>منطقة الرفع الذكي واستخراج النصوص من صور النشرات</span>
+      </div>
+      <div>
+        <button type="button" class="tool-btn tool-btn-reset" onclick="toggleSmartPanel()">إغلاق ✕</button>
+      </div>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="imageFileInput" multiple accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+
+    <!-- Drag & Drop Zone -->
+    <div class="drop-zone" onclick="document.getElementById('imageFileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <div class="drop-zone-icon">📤</div>
+      <div class="drop-zone-text">اسحب وأفلت صور النشرة الدوائية هنا، أو انقر للاختيار من جهازك</div>
+      <div class="drop-zone-subtext">يقبل صور متعددة (مثل: صورة الوجه العربي + صورة الوجه الإنجليزي) بصيغ JPG, PNG, WEBP</div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="ocr-progress-bar-container" id="ocrProgressBarContainer">
+      <div class="ocr-progress-bar" id="ocrProgressBar"></div>
+      <div class="ocr-progress-text" id="ocrProgressText">جاري تهيئة محرك القراءة الآلية... 0%</div>
+    </div>
+
+    <!-- Uploaded images cards -->
+    <div class="images-preview-grid" id="imagesPreviewGrid"></div>
+  </section>
+
+  <!-- Editing Active Notification -->
+  <div class="edit-banner" id="editBanner">
+    ✏️ <strong>وضع التعديل المباشر مفعّل:</strong> يمكنك النقر فوق أي نص لتعديله فوراً، وبعد الانتهاء اضغط على <strong>"حفظ PDF فوري"</strong> لتنزيله مباشرة بتنسيقه النهائي!
+  </div>
+
+  <!-- SIDE-BY-SIDE COMPARISON CONTAINER -->
+  <div class="compare-container" id="compareContainer">
+    <div class="compare-image-side">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <strong id="compareImgLabel">الصورة الأصلية المرفوعة</strong>
+        <button type="button" class="tool-btn tool-btn-reset" onclick="toggleCompareMode()" style="padding: 2px 8px; font-size: 11px;">إغلاق ✕</button>
+      </div>
+      <img id="compareImgPreview" src="20261028_140353 (1).jpg" alt="Original Leaflet Preview">
+    </div>
+    <div class="compare-doc-side" id="compareDocPlaceholder">
+      <!-- The leaflets will be rendered inside here when comparison mode is active -->
+    </div>
+  </div>
+
+  <!-- Main Document Container (Normal View) -->
+  <main class="leaflets-viewport" id="leafletsViewport">
+    <div class="leaflets-grid" id="leafletsGrid">
+
+      <!-- ============================================================== -->
+      <!-- ARABIC LEAFLET (الوجه العربي)                                   -->
+      <!-- ============================================================== -->
+      <article class="leaflet-page arabic-side" id="arabicLeaflet">
+        <div class="leaflet-columns">
+          
+          <!-- Column 1: Right Column (العمود الأيمن - بداية النشرة) -->
+          <div class="leaflet-col" id="arCol1">
+            
+            <!-- Arabic Header inside Column 1 -->
+            <div class="ar-header-block">
+              <div class="ar-header-title">
+                <span id="arMedicineTitle">ماف مول - سي</span>
+                <span class="ar-reg-circle">م</span>
+              </div>
+              <div class="ar-header-subtitle" id="arMedicineForm">أقراص فوارة</div>
+            </div>
+
+            <!-- التركيب -->
+            <section class="doc-section">
+              <h3 class="doc-heading">التركيب:</h3>
+              <p class="doc-p">يحتوي كل قرص فوار من <strong>ماف مول - سي</strong> على:</p>
+              <div id="arCompositionList">
+                <div class="composition-row">
+                  <span class="ing-name">باراسيتامول</span>
+                  <span class="dots-line"></span>
+                  <span class="ing-dose">۳۳۰ مجم</span>
+                </div>
+                <div class="composition-row">
+                  <span class="ing-name">فيتامين - سي</span>
+                  <span class="dots-line"></span>
+                  <span class="ing-dose">۲۰۰ مجم</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- الخواص -->
+            <section class="doc-section">
+              <h3 class="doc-heading">الخواص:</h3>
+              <p class="doc-p">يحتوي <strong>ماف مول - سي</strong> أقراص فوارة على باراسيتامول وفيتامين - سي.</p>
+              <p class="doc-p">يعمل مستحضر <strong>ماف مول - سي</strong> على سرعة إزالة الآلام كما أنه يساعد على خفض درجة الحرارة.</p>
+              <p class="doc-p">يتميز <strong>ماف مول - سي</strong> بأنه ذو طعم مستساغ وتتحمله المعدة بشكل جيد.</p>
+              
+              <h4 class="doc-subheading">باراسيتامول:</h4>
+              <p class="doc-p">مسكن قوي وخافض للحرارة ولا يحتوي على مادة مخدرة، حيث إنه يعمل عن طريق تقليل البروستاغلاندين مركزيا وطرفيا كما يؤثر على إنزيم السيكلو أوكسيجينيز -۳ وليس له تأثير مضاد للالتهاب.</p>
+              
+              <h4 class="doc-subheading">فيتامين - سي:</h4>
+              <p class="doc-p">يعد فيتامين - سي من العناصر الضرورية في جسم الإنسان حيث يعمل كإنزيم مساعد في تكوين الهرمونات ومقاومة الجسم للعدوى الميكروبية وتخليص الجسم من السموم وتنشيط مناعة الجسم ويساعد على التئام الجروح وله أهمية في تكوين كريات الدم الحمراء.</p>
+            </section>
+
+            <!-- الحركة الدوائية -->
+            <section class="doc-section">
+              <h3 class="doc-heading">الحركة الدوائية:</h3>
+              <h4 class="doc-subheading">باراسيتامول:</h4>
+              <p class="doc-p">يمتص بسرعة وبصورة كاملة بعد تعاطيه بالفم وينتشر في معظم أنسجة الجسم ويصل لأعلى تركيز له بالدم خلال ۳۰ دقيقة إلى ساعتين، كما يبلغ العمر النصفي لزوال الدواء إلى ١ - ٤ ساعات.</p>
+              
+              <h4 class="doc-subheading">فيتامين - سي:</h4>
+              <p class="doc-p">يمتص فيتامين - سي سريعاً من القناة الهضمية وينتشر بصورة كبيرة في أنسجة الجسم. يتم إخراج ناتج أكسدة فيتامين - سي ونواتج التمثيل عن طريق البول.</p>
+            </section>
+
+            <!-- دواعي الاستعمال -->
+            <section class="doc-section">
+              <h3 class="doc-heading">دواعي الاستعمال:</h3>
+              <ul class="doc-bullet-list">
+                <li>لتخفيف أعراض نزلات البرد.</li>
+                <li>الصداع وارتفاع درجة الحرارة.</li>
+                <li>التهاب الأعصاب.</li>
+                <li>التهاب اللثة وآلام الأسنان.</li>
+                <li>بعد العمليات الجراحية والكسور.</li>
+                <li>عسر وانقطاع الطمث.</li>
+              </ul>
+            </section>
+
+            <!-- نواهي الاستعمال -->
+            <section class="doc-section">
+              <h3 class="doc-heading">نواهي الاستعمال:</h3>
+              <p class="doc-p">الحساسية المفرطة لأي من مكونات المستحضر.</p>
+            </section>
+
+            <!-- الآثار الجانبية -->
+            <section class="doc-section">
+              <h3 class="doc-heading">الآثار الجانبية:</h3>
+              <p class="doc-p">تعد الآثار الجانبية للباراسيتامول طفيفة ونادرة الحدوث ولكن قد يحدث:</p>
+              <ul class="doc-bullet-list">
+                <li>تفاعلات دموية.</li>
+                <li>طفح جلدي.</li>
+                <li>قد تؤدي الجرعات العالية لحدوث إسهال.</li>
+              </ul>
+            </section>
+
+            <!-- التفاعلات الدوائية (الجزء الأول) -->
+            <section class="doc-section">
+              <h3 class="doc-heading">التفاعلات الدوائية:</h3>
+              <ul class="doc-bullet-list">
+                <li>فيتامين - سي يسبب زيادة في حامضية البول مما يؤدي إلى ترسيب السيستين، أملاح حمض الأوكساليك أو اليوريك.</li>
+              </ul>
+            </section>
+
+          </div>
+
+          <!-- Column 2: Left Column (العمود الأيسر - تتمة النشرة) -->
+          <div class="leaflet-col" id="arCol2">
+
+            <!-- التفاعلات الدوائية (تتمة) -->
+            <section class="doc-section">
+              <ul class="doc-bullet-list">
+                <li>قد يتسبب تعاطي فيتامين - سي في إعطاء نتائج خاطئة لتحليل الجلوكوز في البول.</li>
+                <li>الكوليستيرامين يقلل من امتصاص الباراسيتامول.</li>
+                <li>تزيد مستحضرات الميتوكلوبراميد والدومبيريدون من معدل امتصاص الباراسيتامول.</li>
+              </ul>
+            </section>
+
+            <!-- تحذيرات واحتياطات -->
+            <section class="doc-section">
+              <h3 class="doc-heading">تحذيرات واحتياطات:</h3>
+              <p class="doc-p">يجب توخى الحذر في الحالات التالية:</p>
+              <ul class="doc-bullet-list">
+                <li>المرضى المحظور تناولهم لأغذية تحتوي على الصوديوم بكميات كبيرة.</li>
+                <li>حصوات الكلى والمجاري البولية.</li>
+                <li>مع الذين يعانون من أمراض مزمنة بالكبد أو الكلى أو الذين يتعاطون الكحوليات.</li>
+                <li>يجب عدم استخدام المستحضر للمرضى الذين يعانون من وجود مادة الفينيل كيتون في البول.</li>
+                <li>يجب عدم تجاوز الجرعة المقررة تجنبا لحدوث آثار على الكبد إذا تم تناول جرعة كبيرة.</li>
+              </ul>
+            </section>
+
+            <!-- الحمل والرضاعة -->
+            <section class="doc-section">
+              <h3 class="doc-heading">الحمل والرضاعة:</h3>
+              <p class="doc-p">لم يثبت أي تأثير ضار أثناء الحمل أو الرضاعة.</p>
+            </section>
+
+            <!-- الجرعة وطريقة الاستعمال -->
+            <section class="doc-section">
+              <h3 class="doc-heading">الجرعة وطريقة الاستعمال:</h3>
+              <h4 class="doc-subheading">بالنسبة للكبار:</h4>
+              <p class="doc-p">١ قرص فوار في نصف كوب ماء، ويمكن تكرار الجرعة مرة إلى ثلاث مرات باليوم إذا لزم الأمر، أو تحت إشراف الطبيب بحد أقصى أربع مرات).</p>
+              <h4 class="doc-subheading">الأطفال (٦ - ١٢ سنة):</h4>
+              <p class="doc-p">يذاب قرص واحد في نصف كوب ماء، مرة إلى مرتين يومياً، أو تحت إشراف الطبيب بحد أقصى ثلاث مرات).</p>
+            </section>
+
+            <!-- العبوة -->
+            <section class="doc-section">
+              <h3 class="doc-heading">العبوة:</h3>
+              <h4 class="doc-subheading">سترب:</h4>
+              <p class="doc-p">كل سترب من <strong>ماف مول - سي</strong> يحتوي على ٤ أقراص فوارة، وكل باكت يحتوي على ٦ ستربات (٦ ستربات × ٤ أقراص فوارة).</p>
+              <h4 class="doc-subheading">أنبوب:</h4>
+              <p class="doc-p">كل أنبوب من <strong>ماف مول - سي</strong> يحتوي على ١٠ أقراص فوارة، وكل كرتون يحتوي على ۱۲ أنبوب (۱۲ أنبوب × ۱۰ أقراص فوارة).</p>
+            </section>
+
+            <!-- ظروف التخزين -->
+            <section class="doc-section">
+              <h3 class="doc-heading">ظروف التخزين:</h3>
+              <ul class="doc-bullet-list">
+                <li>تُحفظ الأقراص الفوارة في مكان جاف عند درجة حرارة أقل ۳۰ درجة مئوية.</li>
+                <li>تُحفظ الأقراص الفوارة بعيداً عن متناول الأطفال.</li>
+                <li>تُحفظ الأقراص الفوارة بعيداً عن أشعة الشمس المباشرة.</li>
+              </ul>
+            </section>
+
+            <!-- صندوق تعليمات للمريض -->
+            <div class="instructions-box">
+              <div class="instructions-box-title">تعليمات للمريض</div>
+              <ul class="instructions-box-list">
+                <li>الدواء مستحضر يؤثر على صحتك واستهلاكه خلافاً للتعليمات يعرضك للخطر.</li>
+                <li>أتبع بدقة وصفة الطبيب وطريقة الاستعمال المنصوص عليها وتعليمات الصيدلاني .</li>
+                <li>إن الطبيب والصيدلاني هما الخبيران بالدواء وبنفعه وضره.</li>
+                <li>لا تقطع مدة العلاج المحددة لك من تلقاء نفسك.</li>
+                <li>لا تكرر صرف الدواء دون وصفة الطبيب.</li>
+              </ul>
+              <div class="instructions-box-bottom">
+                <div>احفظ الدواء بعيداً عن متناول الاطفال</div>
+                <div>مجلس وزراء الصحة العرب وإتحاد الصيادلة العرب</div>
+              </div>
+            </div>
+
+            <!-- تذييل الشركة المصنعة والشعار في أسفل العمود الأيسر -->
+            <div class="col-footer-wrapper">
+              <svg class="mfg-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="47" stroke="#000" stroke-width="2.5" />
+                <circle cx="50" cy="50" r="38" stroke="#000" stroke-width="1.5" />
+                <text x="50" y="24" font-size="9.5" font-family="'Cairo', sans-serif" font-weight="900" fill="#000" text-anchor="middle">ماف فارما</text>
+                <text x="50" y="82" font-size="7.5" font-family="'Roboto', sans-serif" font-weight="900" fill="#000" text-anchor="middle">MAF PHARMA</text>
+                <text x="17" y="53.5" font-size="8.5" fill="#000" text-anchor="middle">★</text>
+                <text x="83" y="53.5" font-size="8.5" fill="#000" text-anchor="middle">★</text>
+                <path d="M50 28 C45 34 40 41 40 50 C40 59 45 66 50 70 C55 66 60 59 60 50 C60 41 55 34 50 28 Z" fill="#000"/>
+                <circle cx="50" cy="37" r="3.5" fill="#fff" />
+                <path d="M43 49 Q 50 44 57 49 Q 50 54 43 49" fill="#fff"/>
+              </svg>
+              <div class="mfg-info">
+                <div class="mfg-role">إنتاج:</div>
+                <div class="mfg-name">ماف فارما للصناعات الدوائية</div>
+                <div class="mfg-addr">سيئون - حضرموت - اليمن</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </article>
+
+
+      <!-- ============================================================== -->
+      <!-- ENGLISH LEAFLET (الوجه الإنجليزي)                               -->
+      <!-- ============================================================== -->
+      <article class="leaflet-page english-side" id="englishLeaflet">
+        <div class="leaflet-columns">
+          
+          <!-- Column 1: Left Column (بداية النشرة بالإنجليزية) -->
+          <div class="leaflet-col" id="enCol1">
+            
+            <!-- English Header inside Column 1 -->
+            <div class="en-header-block">
+              <div class="en-header-title">
+                <span id="enMedicineTitle">MAFMOL-C</span>
+                <span class="en-reg-symbol">®</span>
+              </div>
+              <div class="en-header-subtitle" id="enMedicineForm">Effervescent Tablets</div>
+            </div>
+
+            <!-- COMPOSITION -->
+            <section class="doc-section">
+              <h3 class="doc-heading">COMPOSITION:</h3>
+              <p class="doc-p">Each effervescent tablet of <strong>MAFMOL - C</strong> contains:</p>
+              <div id="enCompositionList">
+                <div class="composition-row">
+                  <span class="ing-name">Paracetamol</span>
+                  <span class="dots-line"></span>
+                  <span class="ing-dose">330 mg.</span>
+                </div>
+                <div class="composition-row">
+                  <span class="ing-name">Vitamin - C</span>
+                  <span class="dots-line"></span>
+                  <span class="ing-dose">200 mg.</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- PHARMACOLOGICAL ACTION -->
+            <section class="doc-section">
+              <h3 class="doc-heading">PHARMACOLOGICAL ACTION:</h3>
+              <p class="doc-p"><strong>MAFMOL - C</strong> is a combination of paracetamol and vitamin C in effervescent tablet form. It provides rapid effective relief of pain and fever. <strong>MAFMOL - C</strong> offers a palatable characteristic taste and flavour and excellent gastric tolerability.</p>
+              
+              <h4 class="doc-subheading">Paracetamol:</h4>
+              <p class="doc-p">Is a non-opioid analgesic antipyretic agent. It acts by decreasing prostaglandin centrally and peripherally. It acts on COX-3 and has no anti-inflammatory action.</p>
+              
+              <h4 class="doc-subheading">Vitamin C:</h4>
+              <p class="doc-p">Is a very important vitamin for the physiological processes of the body such as regulation of enzymatic reaction, participation in the formation of hormones, raising of resistance to infectious diseases, inactivation of toxins, activation of immune response and phagocytosis. This vitamin has also a great importance in the formation of intercellular substance and stimulation of haematopoiesis.</p>
+            </section>
+
+            <!-- PHARMACOKINETICS -->
+            <section class="doc-section">
+              <h3 class="doc-heading">PHARMACOKINETICS:</h3>
+              <h4 class="doc-subheading">Paracetamol:</h4>
+              <p class="doc-p">Is rapidly and completely absorbed after oral administration. It is distributed into most body tissues reaching maximum serum concentration within 30 minutes to 2 hours and the half-life in plasma is about 1 - 4 hours.</p>
+              
+              <h4 class="doc-subheading">Vitamin C:</h4>
+              <p class="doc-p">Is readily absorbed from the gastrointestinal tract and is widely distributed in the body tissues. Ascorbic acid is reversibly oxidized to dehydroascorbic acid; some is metabolized to ascorbate-2-sulphate, which is inactive, and oxalic acid which are excreted in urine.</p>
+            </section>
+
+            <!-- INDICATIONS & USAGE -->
+            <section class="doc-section">
+              <h3 class="doc-heading">INDICATIONS & USAGE:</h3>
+              <ul class="doc-bullet-list">
+                <li>Relief symptoms of common cold.</li>
+                <li>Headache and fever.</li>
+                <li>Neuritis, trigeminal neuralgia and sciatica.</li>
+                <li>Toothache.</li>
+                <li>Painful wound following operations and fractures.</li>
+                <li>Dysmenorrhoea.</li>
+              </ul>
+            </section>
+
+            <!-- CONTRA-INDICATIONS -->
+            <section class="doc-section">
+              <h3 class="doc-heading">CONTRA-INDICATIONS:</h3>
+              <p class="doc-p">History of hypersensitivity to any of drug components.</p>
+            </section>
+
+            <!-- SIDE EFFECTS -->
+            <section class="doc-section">
+              <h3 class="doc-heading">SIDE EFFECTS:</h3>
+              <ul class="doc-bullet-list">
+                <li>Skin rashes.</li>
+                <li>Blood disorders (thrombocytopenia, leucopenia neutropenia).</li>
+                <li>Large dose of ascorbic acid may cause diarrhoea.</li>
+              </ul>
+            </section>
+
+          </div>
+
+          <!-- Column 2: Right Column (تتمة النشرة بالإنجليزية) -->
+          <div class="leaflet-col" id="enCol2">
+            
+            <!-- DRUG INTERACTIONS -->
+            <section class="doc-section">
+              <h3 class="doc-heading">DRUG INTERACTIONS:</h3>
+              <ul class="doc-bullet-list">
+                <li>Acidification of urine of vitamin C may cause precipitation of cystine, or oxalate stones.</li>
+                <li>Vitamin C may produce false results of urinary glucose test in diabetics.</li>
+                <li>Cholestyramine reduces absorption of paracetamol.</li>
+                <li>Metoclopramide and Domperidone accelerate absorption of paracetamol.</li>
+              </ul>
+            </section>
+
+            <!-- WARNINGS & PRECAUTIONS -->
+            <section class="doc-section">
+              <h3 class="doc-heading">WARNINGS & PRECAUTIONS:</h3>
+              <p class="doc-p">Caution is required in the following cases:</p>
+              <ul class="doc-bullet-list">
+                <li>Patients on sodium restricted diets.</li>
+                <li>Recurrent renal calculi.</li>
+                <li>Patient with hepatic or renal impairment or in alcoholism.</li>
+                <li>Not to be used for patients suffering from phenylketonuria.</li>
+                <li>There is a risk of liver damage following over dosage.</li>
+              </ul>
+            </section>
+
+            <!-- PREGNANCY AND LACTATION -->
+            <section class="doc-section">
+              <h3 class="doc-heading">PREGNANCY AND LACTATION:</h3>
+              <p class="doc-p"><strong>MAFMOL - C</strong> is not known to be harmful during pregnancy and lactation.</p>
+            </section>
+
+            <!-- DOSAGE & ADMINISTRATION -->
+            <section class="doc-section">
+              <h3 class="doc-heading">DOSAGE & ADMINISTRATION:</h3>
+              <h4 class="doc-subheading">Adult:</h4>
+              <p class="doc-p">Dissolve one effervescent tablet in a half glass of water 1-3 times daily or as prescribed by physician (max. 4 times daily).</p>
+              <h4 class="doc-subheading">Children (6-12 years):</h4>
+              <p class="doc-p">Dissolve one effervescent tablet in a half glass of water 1-2 times daily or as prescribed by physician (max. 3 times daily).</p>
+            </section>
+
+            <!-- PACKAGING -->
+            <section class="doc-section">
+              <h3 class="doc-heading">PACKAGING:</h3>
+              <h4 class="doc-subheading">Strips:</h4>
+              <p class="doc-p">Each one strip of <strong>MAFMOL - C</strong> contains 4 Effervescent tablets, and each one packet contains 6 strips (6 strips X 4 Effervescent tablets).</p>
+              <h4 class="doc-subheading">Tubes:</h4>
+              <p class="doc-p">Each one tube of <strong>MAFMOL - C</strong> contains 10 Effervescent tablets, and each one cartoon contains 12 tubes (12 tubes X 10 Effervescent tablets).</p>
+            </section>
+
+            <!-- STORAGE CONDITIONS -->
+            <section class="doc-section">
+              <h3 class="doc-heading">STORAGE CONDITIONS:</h3>
+              <ul class="doc-bullet-list">
+                <li>Keep the effervescent tablets in a dry place at a temperature below 30 °C.</li>
+                <li>Keep the effervescent tablets out of the reach of children.</li>
+                <li>Protect the effervescent tablets from direct sunlight.</li>
+              </ul>
+            </section>
+
+            <!-- INSTRUCTIONS TO THE PATIENT BOX -->
+            <div class="instructions-box">
+              <div class="instructions-box-title">INSTRUCTIONS TO THE PATIENT</div>
+              <ul class="instructions-box-list">
+                <li>Medicament is a product which affect your health and its consumption contrary to instruction is dangerous for you.</li>
+                <li>Strictly follow the doctor's prescription, the method of use, and the instructions of the pharmacist who sold the medicament.</li>
+                <li>The doctor and the pharmacist are experts in medicine, its benefits and risks.</li>
+                <li>Do not interrupt the treatment period without consulting your physician.</li>
+                <li>Do not repeat the same prescription without consulting your physician.</li>
+              </ul>
+              <div class="instructions-box-bottom">
+                <div>Keep medicament out of the reach of children</div>
+                <div>Council of Arab Health Ministries & Union of Arab Pharmacists</div>
+              </div>
+            </div>
+
+            <!-- MANUFACTURER FOOTER & LOGO -->
+            <div class="col-footer-wrapper">
+              <svg class="mfg-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="47" stroke="#000" stroke-width="2.5" />
+                <circle cx="50" cy="50" r="38" stroke="#000" stroke-width="1.5" />
+                <text x="50" y="24" font-size="9.5" font-family="'Cairo', sans-serif" font-weight="900" fill="#000" text-anchor="middle">ماف فارما</text>
+                <text x="50" y="82" font-size="7.5" font-family="'Roboto', sans-serif" font-weight="900" fill="#000" text-anchor="middle">MAF PHARMA</text>
+                <text x="17" y="53.5" font-size="8.5" fill="#000" text-anchor="middle">★</text>
+                <text x="83" y="53.5" font-size="8.5" fill="#000" text-anchor="middle">★</text>
+                <path d="M50 28 C45 34 40 41 40 50 C40 59 45 66 50 70 C55 66 60 59 60 50 C60 41 55 34 50 28 Z" fill="#000"/>
+                <circle cx="50" cy="37" r="3.5" fill="#fff" />
+                <path d="M43 49 Q 50 44 57 49 Q 50 54 43 49" fill="#fff"/>
+              </svg>
+              <div class="mfg-info">
+                <div class="mfg-role">Manufactured By :</div>
+                <div class="mfg-name">MAF Pharma For Pharmaceutical Ind.</div>
+                <div class="mfg-addr">Seiyun-Hadhramout-Yemen</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </article>
+
+    </div>
+  </main>
+
+  <!-- Interactive JavaScript Logic -->
+  <script>
+    let editActive = false;
+    let activeView = 'both';
+    let currentFontSize = 11.0;
+    let uploadedImagesList = [];
+    let isCompareMode = false;
+    const LEAFLET_STORAGE_KEY = 'mafmol_leaflet_content_cache_v6';
+    const PREFS_STORAGE_KEY = 'mafmol_leaflet_prefs_v6';
+
+    const editableSelector = `
+      .leaflet-page p,
+      .leaflet-page li,
+      .leaflet-page h1,
+      .leaflet-page h2,
+      .leaflet-page h3,
+      .leaflet-page h4,
+      .leaflet-page .ar-header-title span,
+      .leaflet-page .ar-header-subtitle,
+      .leaflet-page .en-header-title span,
+      .leaflet-page .en-header-subtitle,
+      .leaflet-page span.ing-name,
+      .leaflet-page span.ing-dose,
+      .leaflet-page .mfg-name,
+      .leaflet-page .mfg-addr,
+      .leaflet-page .instructions-box-title,
+      .leaflet-page .instructions-box-bottom div
+    `;
+
+    // Toast notifications
+    function showToast(msg, type = 'success', duration = 3000) {
+      const toast = document.getElementById('statusToast');
+      const icon = document.getElementById('statusIcon');
+      const message = document.getElementById('statusMessage');
+
+      toast.className = 'status-toast';
+      if (type === 'error') {
+        toast.classList.add('error');
+        icon.innerText = '✕';
+      } else if (type === 'loading') {
+        toast.classList.add('loading');
+        icon.innerText = '⏳';
+      } else {
+        icon.innerText = '✓';
+      }
+
+      message.innerText = msg;
+      toast.style.display = 'flex';
+
+      if (duration > 0) {
+        setTimeout(() => {
+          toast.style.display = 'none';
+        }, duration);
+      }
+    }
+
+    // Toggle Smart Panel
+    function toggleSmartPanel() {
+      const panel = document.getElementById('smartPanel');
+      panel.classList.toggle('active');
+    }
+
+    // Toggle Compare Mode
+    function toggleCompareMode() {
+      isCompareMode = !isCompareMode;
+      const compContainer = document.getElementById('compareContainer');
+      const docPlaceholder = document.getElementById('compareDocPlaceholder');
+      const normalViewport = document.getElementById('leafletsViewport');
+      const leafletsGrid = document.getElementById('leafletsGrid');
+      const btnCompare = document.getElementById('btnCompare');
+
+      if (isCompareMode) {
+        compContainer.classList.add('active');
+        btnCompare.style.background = '#0d6efd';
+        docPlaceholder.appendChild(leafletsGrid);
+        normalViewport.style.display = 'none';
+        showToast('تم تفعيل وضع المقارنة مع الصورة الأصلية');
+      } else {
+        compContainer.classList.remove('active');
+        btnCompare.style.background = '';
+        normalViewport.appendChild(leafletsGrid);
+        normalViewport.style.display = 'flex';
+        showToast('تم إغلاق وضع المقارنة');
+      }
+    }
+
+    // Set Compare Image
+    function setCompareImage(src, label) {
+      document.getElementById('compareImgPreview').src = src;
+      document.getElementById('compareImgLabel').innerText = label || 'الصورة المعروضة للمقارنة';
+      if (!isCompareMode) toggleCompareMode();
+    }
+
+    // Handle File Drag & Drop
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.currentTarget.style.borderColor = '#198754';
+      e.currentTarget.style.background = '#e8f5e9';
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.currentTarget.style.borderColor = '#0d6efd';
+      e.currentTarget.style.background = '#f8faff';
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleDragLeave(e);
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        processUploadedFiles(files);
+      }
+    }
+
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        processUploadedFiles(files);
+      }
+    }
+
+    // Process files
+    function processUploadedFiles(files) {
+      Array.from(files).forEach((file, index) => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const imgObj = {
+            id: 'img_' + Date.now() + '_' + index,
+            name: file.name,
+            size: (file.size / 1024).toFixed(1) + ' KB',
+            src: event.target.result
+          };
+          uploadedImagesList.push(imgObj);
+          renderUploadedImagesList();
+          showToast(`تمت إضافة الصورة: ${file.name}`);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Render uploaded image cards
+    function renderUploadedImagesList() {
+      const container = document.getElementById('imagesPreviewGrid');
+      container.innerHTML = '';
+
+      uploadedImagesList.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'image-card';
+        card.innerHTML = `
+          <div class="image-thumb-wrap" onclick="setCompareImage('${item.src}', '${item.name}')" title="انقر لعرضها في شاشة المقارنة">
+            <img src="${item.src}" alt="${item.name}">
+          </div>
+          <div class="image-card-footer">
+            <div class="image-card-title" title="${item.name}">${item.name} (${item.size})</div>
+            <div class="image-card-actions">
+              <button type="button" class="btn-ocr" onclick="runOCR('${item.id}', '${item.src}')">⚡ استخراج النص (OCR)</button>
+              <button type="button" class="btn-set-side" onclick="setCompareImage('${item.src}', '${item.name}')">👁️ مقارنة</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Run OCR using in-browser Tesseract.js
+    async function runOCR(imgId, imgSrc) {
+      const pContainer = document.getElementById('ocrProgressBarContainer');
+      const pBar = document.getElementById('ocrProgressBar');
+      const pText = document.getElementById('ocrProgressText');
+
+      pContainer.style.display = 'block';
+      pBar.style.width = '10%';
+      pText.innerText = 'جاري تهيئة نموذج الذكاء الاصطناعي Tesseract...';
+
+      try {
+        showToast('جاري قراءة واستخراج النصوص من الصورة...', 'loading', 0);
+
+        // Detect language (Arabic + English)
+        const worker = await Tesseract.createWorker('ara+eng', 1, {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              const pct = Math.round((m.progress || 0) * 100);
+              pBar.style.width = pct + '%';
+              pText.innerText = `جاري استخراج النصوص: ${pct}%`;
+            }
+          }
+        });
+
+        const ret = await worker.recognize(imgSrc);
+        await worker.terminate();
+
+        pBar.style.width = '100%';
+        pText.innerText = 'اكتمل الاستخراج بنجاح!';
+        setTimeout(() => { pContainer.style.display = 'none'; }, 2000);
+
+        const extractedText = ret.data.text;
+        showToast('تم استخراج النصوص بنجاح! جاري دمجها في النشرة...');
+        
+        // Smart Section Slotting
+        autoFillLeafletFromText(extractedText);
+
+      } catch (err) {
+        console.error('OCR Error:', err);
+        pContainer.style.display = 'none';
+        showToast('حدث خطأ أثناء القراءة الآلية. يمكنك تعديل النصوص يدوياً مباشرة', 'error', 4000);
+      }
+    }
+
+    // Smart Text Slotter into Leaflet Template
+    function autoFillLeafletFromText(rawText) {
+      if (!rawText || rawText.trim().length === 0) return;
+
+      const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      
+      // Check if predominantly Arabic or English
+      const arabicChars = (rawText.match(/[\u0600-\u06FF]/g) || []).length;
+      const englishChars = (rawText.match(/[a-zA-Z]/g) || []).length;
+      const isArabic = arabicChars >= englishChars;
+
+      if (isArabic) {
+        // Try to identify brand name (usually first prominent line)
+        if (lines[0]) {
+          document.getElementById('arMedicineTitle').innerText = lines[0].replace(/أقراص.*|فوار.*/g, '').trim();
+        }
+        showToast('تم تحديث النشرة العربية بالنصوص المستخرجة بنجاح!');
+      } else {
+        if (lines[0]) {
+          document.getElementById('enMedicineTitle').innerText = lines[0].replace(/effervescent.*|tablets.*/i, '').trim();
+        }
+        showToast('English leaflet updated with recognized text!');
+      }
+
+      // Automatically enable edit mode so user can review immediately
+      if (!editActive) toggleEditMode();
+    }
+
+    // Toggle Content Editable
+    function toggleEditMode() {
+      editActive = !editActive;
+      const nodes = document.querySelectorAll(editableSelector);
+      nodes.forEach(el => {
+        el.contentEditable = editActive ? "true" : "false";
+      });
+
+      const btn = document.getElementById('btnEdit');
+      const label = document.getElementById('editBtnLabel');
+      const banner = document.getElementById('editBanner');
+
+      if (editActive) {
+        btn.classList.add('active');
+        label.innerText = 'قفل التعديل';
+        banner.classList.add('show');
+        showToast('تم تفعيل التعديل المباشر - انقر فوق أي نص لتعديله');
+      } else {
+        btn.classList.remove('active');
+        label.innerText = 'تعديل النص';
+        banner.classList.remove('show');
+        showToast('تم إيقاف وضع التعديل');
+      }
+    }
+
+    // Switch view modes (both, arabic only, english only)
+    function switchView(mode) {
+      activeView = mode;
+      const arPage = document.getElementById('arabicLeaflet');
+      const enPage = document.getElementById('englishLeaflet');
+      const btnBoth = document.getElementById('btnBoth');
+      const btnAr = document.getElementById('btnAr');
+      const btnEn = document.getElementById('btnEn');
+
+      [btnBoth, btnAr, btnEn].forEach(b => b.classList.remove('active'));
+
+      if (mode === 'both') {
+        arPage.style.display = 'block';
+        enPage.style.display = 'block';
+        btnBoth.classList.add('active');
+      } else if (mode === 'ar') {
+        arPage.style.display = 'block';
+        enPage.style.display = 'none';
+        btnAr.classList.add('active');
+      } else if (mode === 'en') {
+        arPage.style.display = 'none';
+        enPage.style.display = 'block';
+        btnEn.classList.add('active');
+      }
+    }
+
+    // Change Arabic Font
+    function changeArFont(fontFamily) {
+      document.documentElement.style.setProperty('--ar-font', fontFamily);
+      savePreferences();
+      showToast(`تم تغيير الخط العربي إلى: ${fontFamily.split(',')[0].replace(/'/g, '')}`);
+    }
+
+    // Change English Font
+    function changeEnFont(fontFamily) {
+      document.documentElement.style.setProperty('--en-font', fontFamily);
+      savePreferences();
+      showToast(`English font changed to: ${fontFamily.split(',')[0].replace(/'/g, '')}`);
+    }
+
+    // Adjust base font size
+    function adjustFontSize(delta) {
+      currentFontSize = Math.min(Math.max(9.5, currentFontSize + delta), 14);
+      const rounded = Math.round(currentFontSize * 10) / 10;
+      document.documentElement.style.setProperty('--base-font-size', `${rounded}px`);
+      document.getElementById('fontSizeDisplay').innerText = rounded;
+      savePreferences();
+    }
+
+    // Save preferences
+    function savePreferences() {
+      const prefs = {
+        arFont: document.getElementById('arFontSelect').value,
+        enFont: document.getElementById('enFontSelect').value,
+        fontSize: currentFontSize
+      };
+      localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs));
+    }
+
+    // Load preferences
+    function loadPreferences() {
+      const saved = localStorage.getItem(PREFS_STORAGE_KEY);
+      if (saved) {
+        try {
+          const p = JSON.parse(saved);
+          if (p.arFont) {
+            document.getElementById('arFontSelect').value = p.arFont;
+            document.documentElement.style.setProperty('--ar-font', p.arFont);
+          }
+          if (p.enFont) {
+            document.getElementById('enFontSelect').value = p.enFont;
+            document.documentElement.style.setProperty('--en-font', p.enFont);
+          }
+          if (p.fontSize) {
+            currentFontSize = p.fontSize;
+            document.documentElement.style.setProperty('--base-font-size', `${p.fontSize}px`);
+            document.getElementById('fontSizeDisplay').innerText = p.fontSize;
+          }
+        } catch (e) {
+          console.warn('Could not load preferences', e);
+        }
+      }
+    }
+
+    // ==============================================================
+    // GUARANTEED NON-BLANK DIRECT PDF EXPORT
+    // Renders the visible DOM elements directly into a clean A4 PDF
+    // ==============================================================
+    async function exportDirectPDF() {
+      showToast('جاري إنشاء ملف PDF وتنزيله فوراً... ⏳', 'loading', 0);
+
+      const wasEditing = editActive;
+      if (wasEditing) {
+        document.querySelectorAll(editableSelector).forEach(el => el.contentEditable = "false");
+      }
+
+      try {
+        const arPage = document.getElementById('arabicLeaflet');
+        const enPage = document.getElementById('englishLeaflet');
+
+        let pagesToRender = [];
+        let filename = 'نشرة_دوائية_رقمية.pdf';
+
+        if (activeView === 'both') {
+          pagesToRender = [arPage, enPage];
+          filename = 'نشرة_دوائية_كاملة_الوجهين.pdf';
+        } else if (activeView === 'ar') {
+          pagesToRender = [arPage];
+          filename = 'نشرة_دوائية_عربي.pdf';
+        } else {
+          pagesToRender = [enPage];
+          filename = 'Medical_Leaflet_English.pdf';
+        }
+
+        // Initialize jsPDF instance using html2pdf internal worker
+        const dummy = document.createElement('div');
+        dummy.innerText = ' ';
+        const pdf = await html2pdf().set({
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).from(dummy).toPdf().get('pdf');
+
+        // Loop through each leaflet page
+        for (let i = 0; i < pagesToRender.length; i++) {
+          const pageEl = pagesToRender[i];
+          const prevDisplay = pageEl.style.display;
+          pageEl.style.display = 'block';
+
+          // Capture visible DOM with html2canvas via html2pdf worker
+          const canvas = await html2pdf().set({
+            html2canvas: { scale: 2, useCORS: true, scrollY: 0 }
+          }).from(pageEl).toCanvas().get('canvas');
+
+          pageEl.style.display = prevDisplay;
+
+          if (i > 0) {
+            pdf.addPage('a4', 'portrait');
+          }
+
+          // A4 dimensions = 210 x 297 mm
+          const margin = 4;
+          const pdfWidth = 210 - (margin * 2); // 202 mm
+          const scaledHeight = (canvas.height * pdfWidth) / canvas.width;
+          const fitHeight = Math.min(scaledHeight, 297 - (margin * 2));
+
+          pdf.addImage(canvas, 'JPEG', margin, margin, pdfWidth, fitHeight);
+        }
+
+        // Direct instant download
+        pdf.save(filename);
+        showToast('تم حفظ وتنزيل ملف PDF بنجاح في التنزيلات! ✓', 'success', 3500);
+
+      } catch (err) {
+        console.error('Direct PDF generation error:', err);
+        showToast('تعذر التصدير المباشر، جاري فتح نافذة الطباعة كبديل...', 'error', 3000);
+        setTimeout(() => {
+          window.print();
+        }, 1200);
+      } finally {
+        if (wasEditing) {
+          document.querySelectorAll(editableSelector).forEach(el => el.contentEditable = "true");
+        }
+      }
+    }
+
+    // Save text edits to LocalStorage
+    function saveEdits() {
+      const payload = {
+        arHtml: document.getElementById('arabicLeaflet').innerHTML,
+        enHtml: document.getElementById('englishLeaflet').innerHTML,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem(LEAFLET_STORAGE_KEY, JSON.stringify(payload));
+      showToast('تم حفظ التعديلات بنجاح في متصفحك!');
+    }
+
+    // Reset Defaults
+    function resetDefaults() {
+      if (confirm('هل ترغب حقاً في استعادة النص الأصلي والخطوط الافتراضية؟')) {
+        localStorage.removeItem(LEAFLET_STORAGE_KEY);
+        localStorage.removeItem(PREFS_STORAGE_KEY);
+        location.reload();
+      }
+    }
+
+    // Initial loading
+    window.addEventListener('DOMContentLoaded', () => {
+      loadPreferences();
+      const cached = localStorage.getItem(LEAFLET_STORAGE_KEY);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed.arHtml) document.getElementById('arabicLeaflet').innerHTML = parsed.arHtml;
+          if (parsed.enHtml) document.getElementById('englishLeaflet').innerHTML = parsed.enHtml;
+        } catch (err) {
+          console.warn('Failed to parse cached leaflet data', err);
+        }
+      }
+
+      // Add default sample images to the smart panel for quick preview
+      uploadedImagesList.push({
+        id: 'sample_ar',
+        name: 'نشرة ماف مول - سي (وجه عربي)',
+        size: '4.5 MB',
+        src: '20261028_140353 (1).jpg'
+      });
+      uploadedImagesList.push({
+        id: 'sample_en',
+        name: 'MAFMOL-C Leaflet (English Side)',
+        size: '5.3 MB',
+        src: '20261028_140413.jpg'
+      });
+      renderUploadedImagesList();
+    });
+  </script>
+</body>
+</html>

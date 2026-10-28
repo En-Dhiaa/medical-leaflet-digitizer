@@ -1,0 +1,11 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary & Test files
+*.tmp
+*.log
+test_downloads/
+test_*.js
+verify_*.js
